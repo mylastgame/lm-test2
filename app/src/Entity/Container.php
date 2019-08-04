@@ -76,4 +76,14 @@ class Container
 
         return $this;
     }
+
+    public function getProductIds(): array
+    {
+        $ids = [];
+        foreach ($this->products as $product) {
+            $ids[] = $product->getId();
+        }
+
+        return $ids;
+    }
 }

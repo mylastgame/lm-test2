@@ -4,15 +4,27 @@ namespace App\Controller;
 
 use App\Entity\Container;
 use App\Entity\Product;
-use App\Repository\ContainerRepository;
+use App\Services\DataService;
 use Doctrine\ORM\EntityManagerInterface;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Serializer\SerializerInterface;
 
 class ApiController extends AbstractController
 {
+    /**
+     * @var DataService
+     */
+    private $_dataService;
+
+    public function __construct(DataService $dataService)
+    {
+
+        $this->_dataService = $dataService;
+    }
+
     /**
      * @Route("/api", name="api")
      */
@@ -26,27 +38,12 @@ class ApiController extends AbstractController
 
     /**
      * @Route("/api/create-container/{title}", name="create_container")
-     * @param EntityManagerInterface $em
      * @param string $title
-     * @return \Symfony\Component\HttpFoundation\JsonResponse
+     * @return JsonResponse
      */
-    public function createContainer(EntityManagerInterface $em, string $title = '')
+    public function createContainer(string $title = '')
     {
-        $container = new Container();
-
-        if ($title) {
-            $container->setTitle($title);
-        }
-
-        $em->persist($container);
-        $em->flush();
-
-        if (!$title) {
-            $container->setTitle("container#" . $container->getId());
-        }
-
-        $em->persist($container);
-        $em->flush();
+        $container = $this->_dataService->createContainer($title);
 
         return $this->json([
             'status' => 'Success',
@@ -56,28 +53,14 @@ class ApiController extends AbstractController
     }
 
     /**
-     * @Route("/api/create-product/{title}", name="create_container")
+     * @Route("/api/create-product/{title}", name="create_product")
      * @param EntityManagerInterface $em
      * @param string $title
      * @return \Symfony\Component\HttpFoundation\JsonResponse
      */
-    public function createProduct(EntityManagerInterface $em, string $title = '')
+    public function createProduct(string $title = '')
     {
-        $product = new Product();
-
-        if ($title) {
-            $product->setTitle($title);
-        }
-
-        $em->persist($product);
-        $em->flush();
-
-        if (!$title) {
-            $product->setTitle("product#" . $product->getId());
-        }
-
-        $em->persist($product);
-        $em->flush();
+        $product = $this->_dataService->createProduct($title);
 
         return $this->json([
             'status' => 'Success',
@@ -94,34 +77,92 @@ class ApiController extends AbstractController
      * @param Product $productId
      * @return \Symfony\Component\HttpFoundation\JsonResponse
      */
-    public function addProductToContainer(EntityManagerInterface $em, int $containerId, Product $productId)
+    public function addProductToContainer(int $containerId, Product $productId)
     {
-        /** @var Container $container */
-        $container = $em->getRepository(Container::class)->find($containerId);
-
-        /** @var Product $product */
-        $product = $em->getRepository(Product::class)->find($productId);
-
-        $container->addProduct($product);
-        $em->persist($container);
-        $em->flush();
+       if ($this->_dataService->addProductToContainer($containerId, $productId)) {
+           return $this->json([
+               'status' => 'Success',
+           ]);
+       }
 
         return $this->json([
-            'status' => 'Success',
+            'status' => 'Error',
         ]);
     }
 
     /**
-     * @Route("/api/get-container/{containerId}", name="get_container")
+     * @Route("/api/container/{containerId}", name="get_container")
      * @ParamConverter("container", options={"mapping": {"containerId" : "id"}})
      */
     public function getContainer(EntityManagerInterface $em, SerializerInterface $serializer, Container $container)
     {
-        dump($container);
-        dump($serializer);
+        return JsonResponse::fromJsonString($serializer->serialize($container, 'json', ['circular_reference_handler' => function ($object) {
+            return $object->getId();
+        }]));
 
-        return $this->json([
-            'container' => $serializer->serialize($container, 'json')
-        ]);
+//        return new JsonResponse(
+//            ['container' => $serializer->serialize($container, 'json', ['circular_reference_handler' => function ($object) {
+//                return $object->getId();
+//            }])],
+//            JsonResponse::HTTP_OK
+//        );
+//
+//        return $this->json([
+//            'container' => $serializer->serialize($container, 'json', ['circular_reference_handler' => function ($object) {
+//                return $object->getId();
+//            }])
+//        ]);
+
+    }
+
+    /**
+     * @Route("/api/containers", name="get_containers")
+     */
+    public function getContainers(EntityManagerInterface $em, SerializerInterface $serializer)
+    {
+        $containers = $em->getRepository(Container::class)->findAll();
+
+
+        $containersData = [];
+        foreach ($containers as $container) {
+            $containersData[] = ['id' => $container->getId(), 'title' => $container->getTitle()];
+        }
+
+        return new JsonResponse(
+            $containersData,
+            JsonResponse::HTTP_OK
+        );
+    }
+
+    /**
+     * @Route("/api/generate-data/containers/{containersCount}/products/{uniqueProducts}/capacity/{containerCapacity}", name="generate_data")
+     *
+     * @param int $containersCount
+     * @param int $uniqueProducts
+     * @param int $containerCapacity
+     * @return JsonResponse
+     */
+    public function generateData(int $containersCount = 1000, int $uniqueProducts = 100, int $containerCapacity = 10)
+    {
+        $this->_dataService->generateData($containersCount, $uniqueProducts, $containerCapacity);
+        return new JsonResponse(
+            'Success',
+            JsonResponse::HTTP_OK
+        );
+    }
+
+    /**
+     * @Route("/api/get-containers-with-all-products/", name="get_containers_with_all_products")
+     *
+     * @param SerializerInterface $serializer
+     * @return JsonResponse
+     */
+    public function getContainersWithAllProducts(SerializerInterface $serializer)
+    {
+        $containers = $this->_dataService->getContainersContainsAllProducts();
+
+        return JsonResponse::fromJsonString($serializer->serialize($containers, 'json', ['circular_reference_handler' => function ($object) {
+            return $object->getId();
+        }]));
     }
 }

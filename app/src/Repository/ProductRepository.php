@@ -19,6 +19,26 @@ class ProductRepository extends ServiceEntityRepository
         parent::__construct($registry, Product::class);
     }
 
+    public function purge()
+    {
+        $cmd = $this->_em->getClassMetadata(Product::class);
+        $connection = $this->_em->getConnection();
+        $dbPlatform = $connection->getDatabasePlatform();
+        $connection->beginTransaction();
+        try {
+            $connection->query('SET FOREIGN_KEY_CHECKS=0');
+            $q = $dbPlatform->getTruncateTableSql($cmd->getTableName());
+            $connection->executeUpdate($q);
+            $q = $dbPlatform->getTruncateTableSql('container_product');
+            $connection->executeUpdate($q);
+            $connection->query('SET FOREIGN_KEY_CHECKS=1');
+            $connection->commit();
+        }
+        catch (\Exception $e) {
+            $connection->rollback();
+        }
+    }
+
     // /**
     //  * @return Product[] Returns an array of Product objects
     //  */
