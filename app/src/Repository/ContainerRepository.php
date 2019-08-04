@@ -5,6 +5,8 @@ namespace App\Repository;
 use App\Entity\Container;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Symfony\Bridge\Doctrine\RegistryInterface;
+use Doctrine\ORM\EntityNotFoundException;
+use App\Entity\Product;
 
 /**
  * @method Container|null find($id, $lockMode = null, $lockVersion = null)
@@ -37,6 +39,69 @@ class ContainerRepository extends ServiceEntityRepository
         catch (\Exception $e) {
             $connection->rollback();
         }
+    }
+
+    public function createContainer(string $title = '')
+    {
+        $container = new Container();
+        $container->setTitle($title);
+        return $container;
+    }
+
+    public function addNewContainer(string $title = '')
+    {
+        $container = $this->createContainer($title);
+        $container->setTitle($title);
+
+        $this->_em->persist($container);
+        $this->_em->flush();
+
+        if (!$title) {
+            $container->setTitle("container#" . $container->getId());
+            $this->_em->persist($container);
+            $this->_em->flush();
+        }
+
+        return $container;
+    }
+
+    public function deleteContainer(int $id): bool
+    {
+        $container = $this->_em->getRepository(Container::class)->find($id);
+        if ($container) {
+            $this->_em->remove($container);
+            $this->_em->flush();
+        }
+
+        return true;
+    }
+
+    public function addProductsToContainer(int $containerId, array $productIds): Container
+    {
+        /** @var Container $container */
+        $container = $this->_em->getRepository(Container::class)->find($containerId);
+        if (!$container) {
+            throw new EntityNotFoundException('Container with id '.$containerId.' does not exist!');
+        }
+
+        foreach ($productIds as $productId) {
+            $product = $this->_em->getRepository(Product::class)->find($productId);
+            if (!$product) {
+                throw new EntityNotFoundException('Product with id '.$productId.' does not exist!');
+            }
+
+            if ($container->haveProduct($productId)) {
+                throw new \InvalidArgumentException("Container #{$containerId} already have product #{$productId}");
+            }
+
+            $container->addProduct($product);
+        }
+
+
+        $this->_em->persist($container);
+        $this->_em->flush();
+
+        return $container;
     }
 
     // /**

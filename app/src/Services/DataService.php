@@ -11,6 +11,7 @@ namespace App\Services;
 use App\Entity\Container;
 use App\Entity\Product;
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\EntityNotFoundException;
 
 class DataService
 {
@@ -25,68 +26,12 @@ class DataService
         $this->_em = $em;
     }
 
-    /**
-     * @param string $title
-     * @return Container
-     */
-    public function createContainer(string $title = ''): Container
-    {
-        $container = new Container();
-
-        if ($title) {
-            $container->setTitle($title);
-        }
-
-        $this->_em->persist($container);
-        $this->_em->flush();
-
-        if (!$title) {
-            $container->setTitle("container#" . $container->getId());
-            $this->_em->persist($container);
-            $this->_em->flush();
-        }
-
-        return $container;
-    }
-
-    public function createProduct(string $title = ''): Product
-    {
-        $product = new Product();
-
-        if ($title) {
-            $product->setTitle($title);
-        }
-
-        $this->_em->persist($product);
-        $this->_em->flush();
-
-        if (!$title) {
-            $product->setTitle("product#" . $product->getId());
-            $this->_em->persist($product);
-            $this->_em->flush();
-        }
-
-        return $product;
-    }
-
-    public function addProductToContainer(int $containerId, Product $productId): bool
-    {
-        /** @var Container $container */
-        $container = $this->_em->getRepository(Container::class)->find($containerId);
-
-        /** @var Product $product */
-        $product = $this->_em->getRepository(Product::class)->find($productId);
-
-        $container->addProduct($product);
-        $this->_em->persist($container);
-        $this->_em->flush();
-
-        return true;
-    }
-
     public function generateData(int $containersCount = 1000, int $uniqueProductsCount = 100, int $containerCapacity = 10)
     {
-        //@todo if ($containerCapacity * $containersCount < $uniqueProducts)
+        //Если кол-во уникальных товаров больше чем кол-во контейнеров * емкость - Exception
+        if ($containersCount * $containerCapacity < $uniqueProductsCount) {
+            throw new \InvalidArgumentException('containers * capacity must be more then products count');
+        }
 
         $containerRepository = $this->_em->getRepository(Container::class);
         $productRepository = $this->_em->getRepository(Product::class);
@@ -97,9 +42,13 @@ class DataService
 
         //Генерация товаров
         $products = [];
-        for ($i = 0; $i < $uniqueProductsCount; $i++) {
-            $products[] = $this->createProduct();
+        for ($i = 1; $i <= $uniqueProductsCount; $i++) {
+            $product = $productRepository->createProduct("product#{$i}");
+            $this->_em->persist($product);
+            $products[] = $product;
         }
+
+        $this->_em->flush();
 
         //Минимальное кол-во товаров в контейнере которое нужно разместить явно(без рандома), чтобы все уникальные
         //товары были в контейнерах
@@ -109,9 +58,9 @@ class DataService
 
 
         //Генерация контейнеров
-        for ($i = 0; $i < $containersCount; $i++) {
+        for ($i = 1; $i <= $containersCount; $i++) {
             //Получение нового контейнера
-            $container = $this->createContainer();
+            $container = $containerRepository->createContainer("container#{$i}");
 
             //Счетчик кол-ва товаров размещенных в контейнере явно(не рандомно)
             $explicitProductsCounter = 0;
@@ -119,12 +68,17 @@ class DataService
 
             //Заполнение контейнера товарами
             $j = 0;
+            //Список товаров в контейнере(индекс $products)
             $productsInContainer = [];
 
             do {
                 //Явное размещение товаров в контейнере
                 if (count($uniqueProducts) > 0 && $explicitProductsCounter < $minExplicitProductsCount) {
-                    $container->addProduct($products[array_shift($uniqueProducts)]);
+                    $productIndex = array_shift($uniqueProducts);
+                    $product = $products[$productIndex];
+                    $container->addProduct($product);
+                    $productsInContainer[] = $productIndex;
+
                     $explicitProductsCounter++;
                     $j++;
                     continue;

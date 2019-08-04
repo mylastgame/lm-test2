@@ -39,6 +39,13 @@ class Container
         return $this->id;
     }
 
+    public function setId(int $id): self
+    {
+        $this->id = $id;
+
+        return $this;
+    }
+
     public function getTitle(): ?string
     {
         return $this->title;
@@ -85,5 +92,16 @@ class Container
         }
 
         return $ids;
+    }
+
+    public function haveProduct(int $productId)
+    {
+        foreach ($this->products as $product) {
+            if ($productId === $product->getId()) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

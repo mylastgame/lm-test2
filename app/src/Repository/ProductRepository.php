@@ -39,6 +39,30 @@ class ProductRepository extends ServiceEntityRepository
         }
     }
 
+    public function createProduct(string $title = '')
+    {
+        $product = new Product();
+        $product->setTitle($title);
+        return $product;
+    }
+
+    public function addNewProduct(string $title = '')
+    {
+        $product = $this->createProduct($title);
+        $product->setTitle($title);
+
+        $this->_em->persist($product);
+        $this->_em->flush();
+
+        if (!$title) {
+            $product->setTitle("product#" . $product->getId());
+            $this->_em->persist($product);
+            $this->_em->flush();
+        }
+
+        return $product;
+    }
+
     // /**
     //  * @return Product[] Returns an array of Product objects
     //  */
