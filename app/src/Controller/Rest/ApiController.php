@@ -83,6 +83,8 @@ class ApiController extends FOSRestController
     }
 
     /**
+     * Добавление товаров в контейнер
+     *
      * @Rest\Put("/add-products-to-container/{containerId}")
      * @param int $containerId
      * @param Request $request
@@ -130,15 +132,14 @@ class ApiController extends FOSRestController
     }
 
     /**
-     * @Rest\Get("/containers")
+     * Получение всех контейнеров
      *
-     * @param EntityManagerInterface $em
-     * @param SerializerInterface $serializer
+     * @Rest\Get("/containers")
      * @return View
      */
-    public function getContainers(EntityManagerInterface $em)
+    public function getContainers()
     {
-        $containers = $em->getRepository(Container::class)->findAll();
+        $containers = $this->_em->getRepository(Container::class)->findAll();
 
 
         $containersData = [];
@@ -147,6 +148,18 @@ class ApiController extends FOSRestController
         }
 
         return View::create($containersData, Response::HTTP_OK);
+    }
+
+    /**
+     * Получение всех товаров
+     *
+     * @Rest\Get("/products")
+     * @return View
+     */
+    public function getProducts()
+    {
+        $products = $this->_em->getRepository(Product::class)->findAll();
+        return View::create($products, Response::HTTP_OK);
     }
 
 //    /**
@@ -167,6 +180,8 @@ class ApiController extends FOSRestController
 //    }
 
     /**
+     * Генерация данных
+     *
      * @Rest\Post("/generate-data")
      * @param Request $request
      * @return View

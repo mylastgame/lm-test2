@@ -18,6 +18,7 @@ class ContainerServiceTest extends TestCase
     {
         $containerService = new ContainerService();
 
+        //Генерация данных
         /** @var Product[] $products */
         $products = [];
         for ($i = 1; $i <= 100; $i++) {
