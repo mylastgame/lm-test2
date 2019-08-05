@@ -221,6 +221,8 @@ class ApiController extends FOSRestController
     }
 
     /**
+     * Генерация данных по GET запросу
+     *
      * @Rest\Get("/generate-data-from-get/containers/{containersCount}/products/{uniqueProducts}/capacity/{containerCapacity}")
      * @param int $containersCount
      * @param int $uniqueProducts
@@ -261,6 +263,8 @@ class ApiController extends FOSRestController
     }
 
     /**
+     * Выборка контейнеров со всеми уникальными товарами
+     *
      * @Rest\Get("/get-containers-with-all-products")
      * @param ContainerService $containerService
      * @return View
