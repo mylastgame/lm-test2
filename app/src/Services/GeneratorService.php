@@ -10,6 +10,7 @@ namespace App\Services;
 
 use App\Entity\Container;
 use App\Entity\Product;
+use Symfony\Component\Cache\Adapter\RedisAdapter;
 
 
 class GeneratorService
@@ -36,13 +37,24 @@ class GeneratorService
     /**
      * Генерация контейнеров и заполнение товарами
      *
-     * @param array $products
+     * @param Product[] $products
      * @param int $containersCount
      * @param int $containerCapacity
      * @return array
      */
     public function generateContainersWithProducts(array $products, int $containersCount = 1000, int $containerCapacity = 10): array
     {
+        $redis = RedisAdapter::createConnection(
+            'redis://redis'
+        );
+
+        $r = $redis->lRange('list', 0, -1);
+        dump($r);
+        exit;
+
+
+
+
         //Кол-во уникальных товаров
         $uniqueProductsCount = count($products);
 
@@ -71,7 +83,7 @@ class GeneratorService
             //Заполнение контейнера товарами
             $j = 0;
             //Список товаров в контейнере(индекс $products)
-            $productsInContainer = [];
+            //$productsInContainer = [];
 
             do {
                 //Явное размещение товаров в контейнере
@@ -79,7 +91,7 @@ class GeneratorService
                     $productIndex = array_shift($uniqueProducts);
                     $product = $products[$productIndex];
                     $container->addProduct($product);
-                    $productsInContainer[] = $productIndex;
+                    //$productsInContainer[] = $productIndex;
 
                     $explicitProductsCounter++;
                     $j++;
@@ -89,15 +101,15 @@ class GeneratorService
                 //Случайное размещение товара в контейнере
                 $index = rand(0, $uniqueProductsCount - 1);
 
-                if (!in_array($index, $productsInContainer)) {
+                //if (!in_array($index, $productsInContainer)) {
                     $container->addProduct($products[$index]);
-                    $productsInContainer[] = $index;
+                    //$productsInContainer[] = $index;
                     //Удаление из списка ещё не размещенных уникальных товаров
                     if (in_array($index, $uniqueProducts)) {
                         $uniqueProducts = array_diff($uniqueProducts, [$index]);
                     }
                     $j++;
-                }
+                //}
 
             } while ($j < $containerCapacity);
 

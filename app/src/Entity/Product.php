@@ -23,14 +23,14 @@ class Product
      */
     private $title;
 
-    /**
-     * @ORM\ManyToMany(targetEntity="App\Entity\Container", mappedBy="products")
-     */
-    private $containers;
+//    /**
+//     * @ORM\ManyToMany(targetEntity="App\Entity\Container", mappedBy="products")
+//     */
+//    private $containers;
 
     public function __construct()
     {
-        $this->containers = new ArrayCollection();
+        //$this->containers = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -57,31 +57,31 @@ class Product
         return $this;
     }
 
-    /**
-     * @return Collection|Container[]
-     */
-    public function getContainers(): Collection
-    {
-        return $this->containers;
-    }
-
-    public function addContainer(Container $container): self
-    {
-        if (!$this->containers->contains($container)) {
-            $this->containers[] = $container;
-            $container->addProduct($this);
-        }
-
-        return $this;
-    }
-
-    public function removeContainer(Container $container): self
-    {
-        if ($this->containers->contains($container)) {
-            $this->containers->removeElement($container);
-            $container->removeProduct($this);
-        }
-
-        return $this;
-    }
+//    /**
+//     * @return Collection|Container[]
+//     */
+//    public function getContainers(): Collection
+//    {
+//        return $this->containers;
+//    }
+//
+//    public function addContainer(Container $container): self
+//    {
+//        if (!$this->containers->contains($container)) {
+//            $this->containers[] = $container;
+//            $container->addProduct($this);
+//        }
+//
+//        return $this;
+//    }
+//
+//    public function removeContainer(Container $container): self
+//    {
+//        if ($this->containers->contains($container)) {
+//            $this->containers->removeElement($container);
+//            $container->removeProduct($this);
+//        }
+//
+//        return $this;
+//    }
 }

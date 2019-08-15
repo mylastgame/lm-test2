@@ -51,7 +51,6 @@ class ContainerRepository extends ServiceEntityRepository
     public function addNewContainer(string $title = '')
     {
         $container = $this->createContainer($title);
-        $container->setTitle($title);
 
         $this->_em->persist($container);
         $this->_em->flush();
@@ -90,11 +89,13 @@ class ContainerRepository extends ServiceEntityRepository
                 throw new EntityNotFoundException('Product with id '.$productId.' does not exist!');
             }
 
-            if ($container->haveProduct($productId)) {
-                throw new \InvalidArgumentException("Container #{$containerId} already have product #{$productId}");
-            }
-
+//            if ($container->haveProduct($productId)) {
+//                throw new \InvalidArgumentException("Container #{$containerId} already have product #{$productId}");
+//            }
+//            dump('---');
+//            dump(count($container->getProducts()));
             $container->addProduct($product);
+//            dump(count($container->getProducts()));
         }
 
 

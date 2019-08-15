@@ -4,6 +4,7 @@ namespace App\Controller\Rest;
 
 use App\Entity\Container;
 
+use App\Entity\ContainerProduct;
 use App\Entity\Product;
 use App\Services\ContainerService;
 use App\Services\GeneratorService;
@@ -199,6 +200,7 @@ class ApiController extends FOSRestController
 
         $productRepository = $this->_em->getRepository(Product::class);
         $containerRepository = $this->_em->getRepository(Container::class);
+        $containerProductsRepository = $this->_em->getRepository(ContainerProduct::class);
 
         $productRepository->purge();
         $products = $this->_generatorService->generateProducts((int)$request->get('products'));
@@ -209,6 +211,7 @@ class ApiController extends FOSRestController
         $this->_em->flush();
 
         $containerRepository->purge();
+        //$containerProductsRepository->purge();
         $containers = $this->_generatorService->generateContainersWithProducts($products, $request->get('containers'), $request->get('capacity'));
         foreach ($containers as $container) {
             $this->_em->persist($container);

@@ -24,10 +24,11 @@ class ContainerNormalizer implements NormalizerInterface
     public function normalize($container, $format = null, array $context = [])
     {
         $products = [];
-        foreach ($container->getProducts() as $product) {
+        foreach ($container->getContainerProducts() as $containerProduct) {
             $products[] = [
-                'id' => $product->getId(),
-                'title' => $product->getTitle(),
+                'id' => $containerProduct->getProduct()->getId(),
+                'title' => $containerProduct->getProduct()->getTitle(),
+                'amount' => $containerProduct->getAmount(),
             ];
         }
 
